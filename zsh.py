@@ -18,7 +18,6 @@ def urljoin(root, path=''):
         root = '/'.join([root.rstrip('/'), path.rstrip('/')])
     return root
 
-
 def send_request(vector, path):
     api = urljoin(API_ENDPOINT, path)
     vector = json.dumps(vector)
@@ -32,9 +31,7 @@ def send_request(vector, path):
     if "reported" in response:
         print(response)
         exit()
-
     return response
-
 
 def get_errors(vector):
     for i in vector:
@@ -43,50 +40,30 @@ def get_errors(vector):
 
     return json.loads(send_request(vector, 'geterrors'))
 
-
 def get_overfit_vector():
     with open("./overfit.txt", "r") as f:
         return json.load(f)
 
-
-# def random_weight():
-#     return random.uniform(-10, 10)
-
-
-def mutate_vector(vector, probability=4):
+def mutate_vector(vector):
     return_vector = []
     for i in range(len(vector)):
-        mutation_probability = random.randint(0, 10)
-        # if mutation_probability < probability:
-        if mutation_probability < probability:
-            multiplication_factor = 1 + random.uniform(-0.5, 0.5)
-            new_value = vector[i] * multiplication_factor
-            if new_value >= -10 and new_value <= 10:
-                return_vector.append(new_value)
+        if random.randint(0, 10) < 5:
+            add = random.uniform(-1e-13, 1e-13)
+            if abs(vector[i] + add)<=10:
+                return_vector.append(vector[i] + add)
             else:
                 return_vector.append(vector[i])
         else:
             return_vector.append(vector[i])
-    
     return return_vector
-
 
 def create_generation_zero(starting_vector):
     population = []
     for i in range(10):
-        population.append(mutate_vector(starting_vector, probability=8))
+        population.append(mutate_vector(starting_vector))
     return population
 
 
-def fitness_measure(errors):
-    global TRAINING_COEF
-    training_error, validation_error = errors
-    return training_error * TRAINING_COEF + validation_error
-
-
-# def get_mating_indexes(fitness):
-#     population_fitness = population
-    
 def submit(id, vector):
     """
     used to make official submission of your weight vector
@@ -98,17 +75,9 @@ def submit(id, vector):
     
 if __name__ == "__main__":
     overfit_vector = get_overfit_vector()
-    # print(overfit_vector)
-    # print(get_errors(overfit_vector))
     generations = [create_generation_zero(overfit_vector)]
-    # print(generations)
-    errors = [get_errors(vec) for vec in generations[0]]
     
-    for generation_number in range(10):
-        generation = generations[generation_number]
-        member_errors = [get_errors(member) for member in generation]
-        errors.append(member_errors)
-        fitness_values = [fitness_measure(member_error) for member_error in member_errors]
-        mating_pool_indexes = get_mating_indexes(fitness_values)
+    for gen_no in range(10):
+        generation = generations
+        
 
-    # print(submit(API_KEY, get_overfit_vector(API_KEY)))
