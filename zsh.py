@@ -12,6 +12,7 @@ API_ENDPOINT = 'http://10.4.21.156'
 MAX_DEG = 11
 TRAINING_COEF = 0.7
 MAX_PARENTS_SIZE = 10
+GENERATIONS = 10
 
 def urljoin(root, path=''):
     if path:
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     overfit_vector = get_overfit_vector()
     generations = [create_generation_zero(overfit_vector)]
     
-    for gen_no in range(10):
+    for gen_no in range(GENERATIONS):
         generation = generations
         
 
