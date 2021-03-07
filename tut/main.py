@@ -18,12 +18,15 @@ first_parent = overfit_vector
 TRAIN_FACTOR = 1
 fieldNames = ['Generation','Vector','Train Error','Validation Error', 'Fitness']
 
+
 def where_json(fileName):
     return os.path.exists(fileName)
+
 
 def write_json(data, filename = FILE_NAME_WRITE): 
     with open(filename,'w') as f: 
         json.dump(data, f, indent = 4) 
+
 
 def initial_population():
     first_population = [np.copy(first_parent) for i in range(POPULATION_SIZE)]
@@ -46,6 +49,7 @@ def initial_population():
 
     return first_population
 
+
 def calculate_fitness(population):
     fitness = np.empty((POPULATION_SIZE, 3))
 
@@ -60,10 +64,12 @@ def calculate_fitness(population):
     pop_fit = pop_fit[np.argsort(pop_fit[:,-1])]
     return pop_fit
 
+
 def create_mating_pool(population_fitness):
     population_fitness = population_fitness[np.argsort(population_fitness[:,-1])]
     mating_pool = population_fitness[:MATING_POOL_SIZE]
     return mating_pool
+
 
 def mutation(child):
 
@@ -101,6 +107,7 @@ def crossover(parent1, parent2):
 
     return child1, child2
 
+
 def create_children(mating_pool):
     mating_pool = mating_pool[:, :-3]
     children = []
@@ -115,8 +122,7 @@ def create_children(mating_pool):
         children.append(child1)
         children.append(child2)
 
-
-    return children  
+    return children
 
 
 def new_generation(parents_fitness, children):
@@ -126,7 +132,6 @@ def new_generation(parents_fitness, children):
     generation = np.concatenate((parents_fitness, children_fitness))
     generation = generation[np.argsort(generation[:,-1])]
     return generation
-
 
 
 def main():
@@ -177,5 +182,6 @@ def main():
                 temporary.append(rowDict)
             write_json(data)
 
+
 if __name__ == '__main__':
-    main() 
+    main()

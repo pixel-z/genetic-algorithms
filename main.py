@@ -13,6 +13,7 @@ MAX_DEG = 11
 TRAINING_COEF = 0.7
 MAX_PARENTS_SIZE = 10
 
+
 def urljoin(root, path=''):
     if path:
         root = '/'.join([root.rstrip('/'), path.rstrip('/')])
@@ -84,8 +85,9 @@ def fitness_measure(errors):
     return training_error * TRAINING_COEF + validation_error
 
 
-# def get_mating_indexes(fitness):
-#     population_fitness = population
+def get_mating_indexes(fitness):
+    pass
+
     
 def submit(id, vector):
     """
@@ -95,7 +97,8 @@ def submit(id, vector):
     for i in vector: assert 0<=abs(i)<=10
     assert len(vector) == MAX_DEG
     return send_request(id, vector, 'submit')
-    
+
+
 if __name__ == "__main__":
     overfit_vector = get_overfit_vector()
     # print(overfit_vector)
