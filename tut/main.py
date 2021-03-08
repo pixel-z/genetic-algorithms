@@ -15,7 +15,7 @@ overfit_vector = [0.0, -1.45799022e-12, -2.28980078e-13,  4.62010753e-11, -1.752
 
 first_parent = overfit_vector
 
-TRAIN_FACTOR = 0.7
+TRAIN_FACTOR = 0.9
 fieldNames = ['Generation','Vector','Train Error','Validation Error', 'Fitness']
 
 

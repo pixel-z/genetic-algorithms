@@ -79,6 +79,5 @@ if __name__ == "__main__":
     generations = [create_generation_zero(overfit_vector)]
     
     for gen_no in range(GENERATIONS):
-        generation = generations
-        
+        generation = generations[gen_no]
 
