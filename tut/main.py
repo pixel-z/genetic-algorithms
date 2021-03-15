@@ -9,15 +9,17 @@ POPULATION_SIZE = 10
 VECTOR_SIZE = 11
 MATING_POOL_SIZE = 8
 FROM_PARENTS = 8
-FILE_NAME_READ = 'team_5.json'
-FILE_NAME_WRITE = 'team_5.json'
+FILE_NAME_READ =   './generations/391_400.json'
+FILE_NAME_WRITE =  './generations/391_400.json'
+TRACE_FILE = './generations/trace_391_400.json'
 overfit_vector = [0.0, -1.45799022e-12, -2.28980078e-13,  4.62010753e-11, -1.75214813e-10, -1.83669770e-15,  8.52944060e-16,  2.29423303e-05, -2.04721003e-06, -1.59792834e-08,  9.98214034e-10]
 
 first_parent = overfit_vector
 
-TRAIN_FACTOR = 0.9
+TRAIN_FACTOR = 1
 fieldNames = ['Generation','Vector','Train Error','Validation Error', 'Fitness']
 
+trace = {"Trace": []}
 
 def where_json(fileName):
     return os.path.exists(fileName)
@@ -35,11 +37,8 @@ def initial_population():
         for index in range(VECTOR_SIZE):
             vary = 0
             mutation_prob = random.randint(0, 10)
-            if mutation_prob < 3:
-                if index <= 4:
-                    vary = 1 + random.uniform(-0.05, 0.05)
-                else:
-                    vary = random.uniform(0, 1)
+            if mutation_prob < 6:
+                vary = 1 + random.uniform(-0.3, 0.3)
                 rem = overfit_vector[index]*vary
 
                 if abs(rem) < 10:
@@ -75,11 +74,8 @@ def mutation(child):
 
     for i in range(VECTOR_SIZE):
         mutation_prob = random.randint(0, 10)
-        if mutation_prob < 3:
-            if i <= 4:
-                vary = 1 + random.uniform(-0.05, 0.05)
-            else:
-                vary = random.uniform(0, 1) # This was set to 1 + random.uniform(-0.05, 0.05) for trace
+        if mutation_prob < 5:
+            vary = 1 + random.uniform(-0.3, 0.3)
             rem = overfit_vector[i]*vary
             if abs(rem) <= 10:
                 child[i] = rem
@@ -111,18 +107,38 @@ def crossover(parent1, parent2):
 def create_children(mating_pool):
     mating_pool = mating_pool[:, :-3]
     children = []
+    details = []
     for i in range( int(POPULATION_SIZE/2)):
+        detail1 = {}
+        detail2 = {}
+
         parent1 = mating_pool[random.randint(0, MATING_POOL_SIZE-1)]
         parent2 = mating_pool[random.randint(0, MATING_POOL_SIZE-1)]
+
+        detail1["Parent 1"] = parent1
+        detail1["Parent 2"] = parent2
+
+        detail2["Parent 1"] = parent1
+        detail2["Parent 2"] = parent2
+
         child1, child2 = crossover(parent1, parent2)
+        
+        detail1["After Crossover"] = child1
+        detail2["After Crossover"] = child2
         
         child1 = mutation(child1)
         child2 = mutation(child2)
 
+        detail1["After Mutation"] = child1
+        detail2["After Mutation"] = child2
+
         children.append(child1)
         children.append(child2)
 
-    return children
+        details.append(detail1)
+        details.append(detail2)
+
+    return children, details
 
 
 def new_generation(parents_fitness, children):
@@ -159,12 +175,31 @@ def main():
 
     for generation in range(num_generations):   
 
+        global trace
+
+        this_generation = {"Generation": generation + 1}
+        this_generation["Population"] = population_fitness[:, :-3].tolist()      
+        this_generation["Details"] = []      
+
         mating_pool = create_mating_pool(population_fitness)
-        children = create_children(mating_pool)
+        children, details = create_children(mating_pool)
         population_fitness = new_generation(mating_pool, children)
 
+        for childNumber in range(len(children)):
+            childObject = {}
+            childObject["Child Number"] = childNumber + 1
+            childObject["Parent 2"] = details[childNumber]["Parent 2"].tolist()
+            childObject["Parent 1"] = details[childNumber]["Parent 1"].tolist()
+
+            childObject["After Crossover"] = details[childNumber]["After Crossover"].tolist()
+            childObject["After Mutation"] = details[childNumber]["After Mutation"].tolist()
+
+            this_generation["Details"].append(childObject)
+
+
         fitness = population_fitness[:, -3:] 
-        population = population_fitness[:, :-3]      
+        population = population_fitness[:, :-3]
+
         
         for i in range(POPULATION_SIZE):
             # submit_status = submit(SECRET_KEY, population[i].tolist())
@@ -181,6 +216,10 @@ def main():
                             "Fitness": fitness[i][2]}
                 temporary.append(rowDict)
             write_json(data)
+        
+        trace["Trace"].append(this_generation)
+    
+    write_json(trace, filename=TRACE_FILE)
 
 
 if __name__ == '__main__':
