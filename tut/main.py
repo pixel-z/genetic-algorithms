@@ -79,6 +79,7 @@ def mutation(child):
             rem = overfit_vector[i]*vary
             if abs(rem) <= 10:
                 child[i] = rem
+    child[VECTOR_SIZE-1] -= 0.1
     return child
         
 

@@ -13,6 +13,7 @@ MAX_DEG = 11
 TRAINING_COEF = 0.7
 MAX_PARENTS_SIZE = 10
 GENERATIONS = 10
+VECTOR_SIZE = 11
 
 def urljoin(root, path=''):
     if path:
@@ -46,17 +47,18 @@ def get_overfit_vector():
         return json.load(f)
 
 def mutate_vector(vector):
-    return_vector = []
-    for i in range(len(vector)):
-        if random.randint(0, 10) < 5:
-            add = random.uniform(-1e-13, 1e-13)
-            if abs(vector[i] + add)<=10:
-                return_vector.append(vector[i] + add)
-            else:
-                return_vector.append(vector[i])
-        else:
-            return_vector.append(vector[i])
-    return return_vector
+    for i in range(VECTOR_SIZE):
+        mutation_prob = random.randint(0, 10)
+        if mutation_prob < 5:
+            vary = 1 + random.uniform(-0.3, 0.3)
+            rem = overfit_vector[i]*vary
+            if abs(rem) <= 10:
+                child[i] = rem
+    vector[VECTOR_SIZE-1] -= 0.1
+    return vector
+
+def crossover(parent1, parent2):
+    pass
 
 def create_generation_zero(starting_vector):
     population = []
