@@ -4,11 +4,11 @@ import json
 import os
 import requests
 
-KEY = 'qF9wD9XQoX5Pzca7gYOPAQxP6eUozTMGIelPiQVnV8XiqKeVow'
 POPULATION_SIZE = 10
 VECTOR_SIZE = 11
 MATING_POOL_SIZE = 8
 PASSED_FROM_PARENTS = 8
+KEY = 'qF9wD9XQoX5Pzca7gYOPAQxP6eUozTMGIelPiQVnV8XiqKeVow'
 
 overfit_vector = [0.0, -1.45799022e-12, -2.28980078e-13,  4.62010753e-11, -1.75214813e-10, -1.83669770e-15,  8.52944060e-16,  2.29423303e-05, -2.04721003e-06, -1.59792834e-08,  9.98214034e-10]
 
@@ -77,7 +77,7 @@ def get_population_fitness(population):
     fit = np.empty((POPULATION_SIZE, 3))
 
     for i in range(POPULATION_SIZE):
-        KEY, list(population[i]))
+        KEY, list(population[i])
         fit[i][0] = error[0]
         fit[i][1] = error[1]
         fit[i][2] = abs(error[0]*TRAIN_RATIO + error[1]) 
