@@ -1,117 +1,175 @@
 import numpy as np
+import random 
 import json
+import os
 import requests
-import random
 
-# Error on overfit vector => [13510723304.19212, 368296592820.6967]
-# [0.0, -1.45799022e-12, -2.28980078e-13, 4.62010753e-11, -1.75214813e-10, -1.8366977e-15, 8.5294406e-16, 2.29423303e-05, -2.04721003e-06, -1.59792834e-08, 9.98214034e-10]
-# SHRADHA -> [177822470183619.44, 335853778200767.6] 
+KEY = 'qF9wD9XQoX5Pzca7gYOPAQxP6eUozTMGIelPiQVnV8XiqKeVow'
+POPULATION_SIZE = 10
+VECTOR_SIZE = 11
+MATING_POOL_SIZE = 8
+PASSED_FROM_PARENTS = 8
 
-API_KEY = 'qF9wD9XQoX5Pzca7gYOPAQxP6eUozTMGIelPiQVnV8XiqKeVow'
-API_ENDPOINT = 'http://10.4.21.156'
+overfit_vector = [0.0, -1.45799022e-12, -2.28980078e-13,  4.62010753e-11, -1.75214813e-10, -1.83669770e-15,  8.52944060e-16,  2.29423303e-05, -2.04721003e-06, -1.59792834e-08,  9.98214034e-10]
+
+first_parent = overfit_vector
+
+TRAIN_RATIO = 1
+
+API = 'http://10.4.21.156'
 MAX_DEG = 11
-TRAINING_COEF = 0.7
-MAX_PARENTS_SIZE = 10
-
 
 def urljoin(root, path=''):
-    if path:
-        root = '/'.join([root.rstrip('/'), path.rstrip('/')])
+    if path: root = '/'.join([root.rstrip('/'), path.rstrip('/')])
     return root
 
-
-def send_request(vector, path):
-    api = urljoin(API_ENDPOINT, path)
+def send_request(id, vector, path):
+    api = urljoin(API, path)
     vector = json.dumps(vector)
-    response = requests.post(
-        api,
-        data={
-            'id': API_KEY,
-            'vector': vector
-        }
-    ).text
+    response = requests.post(api, data={'id':id, 'vector':vector}).text
     if "reported" in response:
         print(response)
         exit()
 
     return response
 
-
-def get_errors(vector):
-    for i in vector:
-        assert 0 <= abs(i) <= 10
+def get_errors(id, vector):
+    """
+    returns python array of length 2 
+    (train error and validation error)
+    """
+    for i in vector: assert -10<=abs(i)<=10
     assert len(vector) == MAX_DEG
 
-    return json.loads(send_request(vector, 'geterrors'))
+    return json.loads(send_request(id, vector, 'geterrors'))
 
-
-def get_overfit_vector():
-    with open("./overfit.txt", "r") as f:
-        return json.load(f)
-
-
-# def random_weight():
-#     return random.uniform(-10, 10)
-
-
-def mutate_vector(vector, probability=4):
-    return_vector = []
-    for i in range(len(vector)):
-        mutation_probability = random.randint(0, 10)
-        # if mutation_probability < probability:
-        if mutation_probability < probability:
-            multiplication_factor = 1 + random.uniform(-0.5, 0.5)
-            new_value = vector[i] * multiplication_factor
-            if new_value >= -10 and new_value <= 10:
-                return_vector.append(new_value)
-            else:
-                return_vector.append(vector[i])
-        else:
-            return_vector.append(vector[i])
-    
-    return return_vector
-
-
-def create_generation_zero(starting_vector):
-    population = []
-    for i in range(10):
-        population.append(mutate_vector(starting_vector, probability=8))
-    return population
-
-
-def fitness_measure(errors):
-    global TRAINING_COEF
-    training_error, validation_error = errors
-    return training_error * TRAINING_COEF + validation_error
-
-
-def get_mating_indexes(fitness):
-    pass
-
-    
 def submit(id, vector):
     """
     used to make official submission of your weight vector
     returns string "successfully submitted" if properly submitted.
     """
-    for i in vector: assert 0<=abs(i)<=10
+    for i in vector: assert -10<=abs(i)<=10
     assert len(vector) == MAX_DEG
     return send_request(id, vector, 'submit')
 
 
-if __name__ == "__main__":
-    overfit_vector = get_overfit_vector()
-    # print(overfit_vector)
-    # print(get_errors(overfit_vector))
-    generations = [create_generation_zero(overfit_vector)]
-    # print(generations)
-    errors = [get_errors(vec) for vec in generations[0]]
+def initial_population():
+    first_population = []
+    for i in range(POPULATION_SIZE):
+        first_population.append(np.copy(first_parent))
     
-    for generation_number in range(10):
-        generation = generations[generation_number]
-        member_errors = [get_errors(member) for member in generation]
-        errors.append(member_errors)
-        fitness_values = [fitness_measure(member_error) for member_error in member_errors]
-        mating_pool_indexes = get_mating_indexes(fitness_values)
+    for i in range(POPULATION_SIZE):
+        for j in range(VECTOR_SIZE):
+            vary = 0
+            mutation_prob = random.randint(0, 100)
+            if mutation_prob < 60:
+                vary = 1 + random.uniform(-0.05*j, 0.05*j)
+                rem = overfit_vector[j]*vary
 
-    # print(submit(API_KEY, get_overfit_vector(API_KEY)))
+                if abs(rem) < 10:
+                    first_population[i][j] = rem
+                elif abs(first_population[i][j]) >= 10:
+                    first_population[i][j] = random.uniform(-1,1)
+    return first_population
+
+
+def get_population_fitness(population):
+    fit = np.empty((POPULATION_SIZE, 3))
+
+    for i in range(POPULATION_SIZE):
+        KEY, list(population[i]))
+        fit[i][0] = error[0]
+        fit[i][1] = error[1]
+        fit[i][2] = abs(error[0]*TRAIN_RATIO + error[1]) 
+
+    ret = np.column_stack((population, fit))
+    ret = ret[np.argsort(ret[:,-1])]
+    return ret
+
+
+def mutation(vector):
+    for i in range(VECTOR_SIZE):
+        mutation_prob = random.randint(0, 100)
+        if mutation_prob < 50:
+            var = 1 + random.uniform(-0.3, 0.3)
+            rem = overfit_vector[i]*var # multiply to create variations
+            if abs(rem) <= 10:
+                vector[i] = rem
+    return vector
+
+
+def crossover(parent1, parent2):
+    child1 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    child2 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+    r1 = random.random() 
+    n = 3
+        
+    beta = (2 * r1)**((n + 1)**-1)
+    if (r1 >= 0.5):
+        beta = ((2*(1-r1))**-1)**((n + 1)**-1)
+
+    p1 = np.array(parent1)
+    p2 = np.array(parent2)
+    child1 = 0.5*((1 + beta) * p1 + (1 - beta) * p2)
+    child2 = 0.5*((1 - beta) * p1 + (1 + beta) * p2)
+
+    return [child1, child2]
+
+
+def create_children(mating_pool):
+    mating_pool = mating_pool[:, :-3]
+    children = []
+    for i in range( int(POPULATION_SIZE/2)):
+        index1 = random.randint(0, MATING_POOL_SIZE-1)
+        index2 = random.randint(0, MATING_POOL_SIZE-1)
+
+        parent1 = mating_pool[index1]
+        parent2 = mating_pool[index2]
+
+        offsprings = crossover(parent1, parent2)
+
+        child1, child2 = offsprings[0], offsprings[1]
+        
+        child1 = mutation(child1)
+        child2 = mutation(child2)
+
+        children.append(child1)
+        children.append(child2)
+
+    return children
+
+
+def create_next_gen(parents_fitness, children):
+    child_fitness = get_population_fitness(children)[:(POPULATION_SIZE-PASSED_FROM_PARENTS)]
+    parents_fitness = parents_fitness[:PASSED_FROM_PARENTS]
+    generation = np.concatenate((parents_fitness, child_fitness))
+    generation = generation[np.argsort(generation[:,-1])]
+    return generation
+
+
+no_gen = 10
+population = []
+population_fitness = []
+vectors = []
+
+population = initial_population()
+population_fitness = get_population_fitness(population)
+
+for generation in range(no_gen):   
+
+    fitness_population = fitness_population[np.argsort(fitness_population[:,-1])]
+    mating_pool = fitness_population[:MATING_POOL_SIZE]
+    children = create_children(mating_pool)
+    population_fitness = create_next_gen(mating_pool, children)
+
+    population = population_fitness[:, :-3]
+
+    population_vectors = []
+    for vector in population:
+        population_vectors.append(vector.toList())
+
+    vectors.append(population_vectors)
+
+with open('output.json','w') as f: 
+    json.dump(vectors, f, indent = 2) 
